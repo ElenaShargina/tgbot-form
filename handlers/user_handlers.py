@@ -10,6 +10,7 @@ from aiogram.filters.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.fsm.storage.memory import MemoryStorage
+from database.database import save_user
 
 
 # Cоздаем класс, наследуемый от StatesGroup, для группы состояний нашей FSM
@@ -178,6 +179,7 @@ async def process_photo_sent(message: Message,
     # user_dict[callback.from_user.id] = await state.get_data()
     await message.answer(text='\n\n'.join([LEXICON_MESSAGES['final'], LEXICON_MESSAGES['show_data']]))
     data = await state.get_data()
+    await save_user({'name':data['name'],'age':int(data['age']),'gender':data['gender'],'photo':data['photo_id']})
     await message.answer_photo(
             photo=data['photo_id'],
             caption=LEXICON_MESSAGES['data'] % (data['name'], data['age'], LEXICON_KEYBOARD_GENDER[data['gender']]))

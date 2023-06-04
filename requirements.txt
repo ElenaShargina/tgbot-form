@@ -1,2 +1,3 @@
 environs=9.5.0
 aiogram=3.0.0b.7
+sqlalchemy=2.0.15

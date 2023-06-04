@@ -3,10 +3,10 @@ from copy import deepcopy
 
 from aiogram import Router
 from aiogram.types import Message
-from database.database import user_dict_template, users_db
 from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES
 from aiogram.filters import Command, CommandStart, Text, StateFilter, BaseFilter
 from config_data.config import Config, load_config
+from database.database import show_users
 
 
 class IsAdmin(BaseFilter):
@@ -40,6 +40,8 @@ async def process_start_command(message: Message) -> None:
     await message.answer(
         text=LEXICON_MESSAGES['admin_start'],
     )
+    stat = await show_users()
+    await message.answer(text = str(stat))
 
 
 @router.message()
