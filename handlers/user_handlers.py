@@ -77,25 +77,30 @@ async def process_help_command(message: Message):
     await message.answer(LEXICON[message.text],
                          )
 
-# @todo а что если отправить fill в состоянии не default?
-
 @router.message(Command(commands='fill'), StateFilter(default_state))
-async def process_fill_command(message: Message, state: FSMContext):
+@router.callback_query(Text(text='fill'), StateFilter(default_state))
+async def process_fill_command(message: Message, state: FSMContext, callback:CallbackQuery=None, ):
     """
     Срабатывает на команду /fill
     :type message: Message
     """
-    await message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
+    if getattr(message, 'data'):
+        print(message.data)
+        await callback.message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
+    else:
+        print('usual')
+        await message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
+
     await state.set_state(FSMFillForm.fill_name)
 
-@router.callback_query(Text(text='fill'), StateFilter(default_state))
-async def process_fill_callback(callback: CallbackQuery, state: FSMContext):
-    """
-    Срабатывает на нажатие инлайн-кнопки fill
-    :type message: Message
-    """
-    await callback.message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
-    await state.set_state(FSMFillForm.fill_name)
+# @router.callback_query(Text(text='fill'), StateFilter(default_state))
+# async def process_fill_callback(callback: CallbackQuery, state: FSMContext):
+#     """
+#     Срабатывает на нажатие инлайн-кнопки fill
+#     :type message: Message
+#     """
+#     await callback.message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
+#     await state.set_state(FSMFillForm.fill_name)
 
 @router.message()
 async def send_default(message: Message):
