@@ -1,11 +1,10 @@
 import logging
 from copy import deepcopy
 
-from aiogram import Router
-from aiogram.types import CallbackQuery, Message
-from database.database import user_dict_template, users_db, get_today
-from keyboards.form_kb import create_start_form_kb
-from lexicon.lexicon import LEXICON, LEXICON_MESSAGES
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message, PhotoSize
+from keyboards.form_kb import create_gender_kb
+from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_KEYBOARD_GENDER
 from aiogram.filters import Command, CommandStart, Text, StateFilter
 from aiogram.filters.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -32,14 +31,11 @@ router: Router = Router()
 async def process_start_command(message: Message) -> None:
     """
     Срабатывает на команду /start
-    и добавляет пользователя в БД, если его там еще не было,
-    и отправляет ему приветственное сообщение.
+    Отправляет приветственное сообщение.
     :type message: Message
     """
-    logging.info('id= ' + str(message.from_user.id))
     await message.answer(
         text=LEXICON[message.text],
-        reply_markup=create_start_form_kb()
     )
 
 
@@ -51,7 +47,7 @@ async def process_cancel_command_state(message: Message, state: FSMContext):
     :type message: Message
     :type state: FSMContext
     """
-    await message.answer(text='cancel_non_default_state')
+    await message.answer(text=LEXICON_MESSAGES['cancel_non_default_state'])
     # Сбрасываем состояние
     await state.clear()
 
@@ -78,29 +74,124 @@ async def process_help_command(message: Message):
                          )
 
 @router.message(Command(commands='fill'), StateFilter(default_state))
-@router.callback_query(Text(text='fill'), StateFilter(default_state))
-async def process_fill_command(message: Message, state: FSMContext, callback:CallbackQuery=None, ):
+async def process_fill_command(message: Message, state: FSMContext ):
     """
     Срабатывает на команду /fill
+    Устанавливает состояние fill_name
     :type message: Message
     """
-    if getattr(message, 'data'):
-        print(message.data)
-        await callback.message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
-    else:
-        print('usual')
-        await message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
-
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_start'], LEXICON_MESSAGES['fill_name']]))
     await state.set_state(FSMFillForm.fill_name)
 
-# @router.callback_query(Text(text='fill'), StateFilter(default_state))
-# async def process_fill_callback(callback: CallbackQuery, state: FSMContext):
-#     """
-#     Срабатывает на нажатие инлайн-кнопки fill
-#     :type message: Message
-#     """
-#     await callback.message.answer(LEXICON_MESSAGES['fill_start'] + LEXICON_MESSAGES['fill_name'])
-#     await state.set_state(FSMFillForm.fill_name)
+@router.message(StateFilter(FSMFillForm.fill_name), F.text.isalpha())
+async def process_name_sent(message: Message, state: FSMContext):
+    """
+    Срабатывает при КОРРЕКТНОМ вводе имени.
+    Сохраняет введенное значение.
+    Просит ввести возраст.
+    Устанавливает состояние fill_age
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(name=message.text)
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_age']]))
+    await state.set_state(FSMFillForm.fill_age)
+
+@router.message(StateFilter(FSMFillForm.fill_name))
+async def warning_name_sent(message: Message, state: FSMContext):
+    """
+    Срабатывает при НЕКОРРЕКТНОМ вводе имени.
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(name=message.text)
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_name_error'],LEXICON_MESSAGES['cancel']]))
+
+@router.message(StateFilter(FSMFillForm.fill_age),
+            lambda x: x.text.isdigit() and 4 <= int(x.text) <= 120)
+async def process_age_sent(message: Message, state: FSMContext):
+    """
+    Срабатывает, если КОРРЕКТНО введен возраст
+    Сохраняет введенное значение
+    Выводит запрос на пол
+    Устанавливает состояние fill_gender
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(age=message.text)
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_gender']]),
+                         reply_markup=create_gender_kb())
+    await state.set_state(FSMFillForm.fill_gender)
+
+
+@router.message(StateFilter(FSMFillForm.fill_age))
+async def warning_sent_age(message: Message):
+    """
+    Срабатывает, если НЕКОРРЕКТНО введен возраст
+    :type message: Message
+    """
+    await message.answer(
+        text='\n\n'.join([LEXICON_MESSAGES['fill_age_error'],LEXICON_MESSAGES['cancel']]))
+
+
+@router.callback_query(StateFilter(FSMFillForm.fill_gender),
+                   Text(text=['male', 'female', 'undefined_gender']))
+async def process_gender_press(callback: CallbackQuery, state: FSMContext):
+    """
+    Срабатывает, если КОРРЕКТНО введен пол
+    Сохраняет введенное значение
+    Выводит запрос на фото
+    Устанавливает состояние upload_photo
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(gender=callback.data)
+    # редактируем предыдущее сообщение - убираем клавиатуру, выводис сообщение о том, какой пол был выбран
+    await callback.message.edit_text(text=LEXICON_MESSAGES['fill_gender_result'] + LEXICON_KEYBOARD_GENDER[callback.data],reply_markup=None)
+    await callback.message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_photo']]))
+    await state.set_state(FSMFillForm.upload_photo)
+
+
+@router.message(StateFilter(FSMFillForm.fill_gender))
+async def warning_gender_press(message: Message):
+    """
+    Срабатывает, если НЕКОРРЕКТНО введен пол
+    :type message: Message
+    """
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_gender_error'],LEXICON_MESSAGES['cancel']]))
+
+@router.message(StateFilter(FSMFillForm.upload_photo), F.photo[-1].as_('largest_photo'))
+async def process_photo_sent(message: Message,
+                             state: FSMContext,
+                             largest_photo: PhotoSize):
+    """
+    Срабатывает, если КОРРЕКТНО отправлено фото
+    Сохраняет введенное значение
+    СОХРАНЯЕТ ВСЕ ДАННЫЕ В БД
+    Выводит сообщение с благодарностью
+    Выводит сообщение с результатами заполнения анкеты
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(photo_unique_id=largest_photo.file_unique_id,
+                            photo_id=largest_photo.file_id)
+    # user_dict[callback.from_user.id] = await state.get_data()
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['final'], LEXICON_MESSAGES['show_data']]))
+    data = await state.get_data()
+    await message.answer_photo(
+            photo=data['photo_id'],
+            caption=LEXICON_MESSAGES['data'] % (data['name'], data['age'], LEXICON_KEYBOARD_GENDER[data['gender']]))
+    # Устанавливаем дефолтное состояние
+    await state.clear()
+
+
+@router.message(StateFilter(FSMFillForm.upload_photo))
+async def warning_not_photo(message: Message):
+    """
+    Срабатывает, если НЕКОРРЕКТНО отправлено фото
+    :type message: Message
+    """
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_photo_error'], LEXICON_MESSAGES['cancel']]))
 
 @router.message()
 async def send_default(message: Message):
