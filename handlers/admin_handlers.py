@@ -7,6 +7,7 @@ from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES
 from aiogram.filters import Command, CommandStart, Text, StateFilter, BaseFilter
 from config_data.config import Config, load_config
 from database.database import show_users
+from keyboards.form_kb import create_admin_data_kb
 
 
 class IsAdmin(BaseFilter):
@@ -35,13 +36,13 @@ async def process_start_command(message: Message) -> None:
     и отправляет ему приветственное сообщение.
     :type message: Message
     """
-    logging.info(message.from_user.id)
-    logging.info('admin is here')
+    stat = await show_users()
     await message.answer(
         text=LEXICON_MESSAGES['admin_start'],
+        reply_markup=create_admin_data_kb(stat)
     )
-    stat = await show_users()
-    await message.answer(text = str(stat))
+
+
 
 
 @router.message()

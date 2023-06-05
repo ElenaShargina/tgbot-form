@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from lexicon.lexicon import LEXICON_KEYBOARD_GENDER
+from lexicon.lexicon import LEXICON_KEYBOARD_GENDER, LEXICON_KEYBOARD_ADMIN_DATA
 
 
 def create_gender_kb() -> InlineKeyboardMarkup:
@@ -18,3 +18,17 @@ def create_gender_kb() -> InlineKeyboardMarkup:
                                                   [undefined_button]]
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
+
+
+def create_admin_data_kb(data) -> InlineKeyboardMarkup:
+    """
+    Создает клавиатуру для просмотра администратором заполненных анкет
+    :rtype: InlineKeyboardMarkup
+    """
+    kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
+    print(data)
+    for i in data:
+        kb_builder.row(InlineKeyboardButton(text=LEXICON_KEYBOARD_ADMIN_DATA['row'] % i, callback_data = i['id']))
+    markup = kb_builder.as_markup()
+    return markup
+
