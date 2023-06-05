@@ -9,7 +9,6 @@ from keyboards.main_menu import set_main_menu
 # Инициализируем логгер
 logger = logging.getLogger(__name__)
 
-
 # Функция конфигурирования и запуска бота
 async def main():
     # Конфигурируем логирование

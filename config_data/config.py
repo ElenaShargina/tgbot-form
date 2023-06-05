@@ -7,10 +7,14 @@ class TgBot:
     token: str            # Токен для доступа к телеграм-боту
     admin_ids: list[int]  # Список id администраторов бота
 
+@dataclass
+class PhotoFolder:
+    folder: str            # папка для хранения загруженных пользователями фото
 
 @dataclass
 class Config:
     tg_bot: TgBot
+    photo_folder: PhotoFolder
 
 
 def load_config(path: str | None = None) -> Config:
@@ -25,4 +29,7 @@ def load_config(path: str | None = None) -> Config:
     env.read_env(path)
     return Config(tg_bot=TgBot(
                     token=env('BOT_TOKEN'),
-                    admin_ids=list(map(int, env.list('ADMIN_IDS')))))
+                    admin_ids=list(map(int, env.list('ADMIN_IDS')))),
+                photo_folder=PhotoFolder(env('PHOTO_FOLDER'))
+
+    )

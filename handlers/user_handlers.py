@@ -1,7 +1,7 @@
 import logging
 from copy import deepcopy
 
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import CallbackQuery, Message, PhotoSize
 from keyboards.form_kb import create_gender_kb
 from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_KEYBOARD_GENDER
@@ -11,6 +11,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.fsm.storage.memory import MemoryStorage
 from database.database import save_user
+from os.path import splitext
+from config_data.config import load_config
 
 
 # Cоздаем класс, наследуемый от StatesGroup, для группы состояний нашей FSM
@@ -167,21 +169,30 @@ async def process_photo_sent(message: Message,
                              largest_photo: PhotoSize):
     """
     Срабатывает, если КОРРЕКТНО отправлено фото
-    Сохраняет введенное значение
+    Сохраняет фото на диске
+    Сохраняет введенное значение в State
     СОХРАНЯЕТ ВСЕ ДАННЫЕ В БД
     Выводит сообщение с благодарностью
     Выводит сообщение с результатами заполнения анкеты
     :type message: Message
     :type state: FSMContext
     """
-    await state.update_data(photo_unique_id=largest_photo.file_unique_id,
-                            photo_id=largest_photo.file_id)
-    # user_dict[callback.from_user.id] = await state.get_data()
+    # сохраняем фото на диске
+    my_config = load_config()
+    print("!!!!!!1",my_config.photo_folder.folder)
+    file_info = await state.bot.get_file(message.photo[-1].file_id)
+    filename, file_extension = splitext(file_info.file_path)
+    saved_filename = message.photo[-1].file_unique_id + file_extension
+    with open(my_config.photo_folder.folder + saved_filename, mode='wb') as f:
+        d = await state.bot.download(file=file_info, destination=f)
+
+    await state.update_data(photo=saved_filename)
+
     await message.answer(text='\n\n'.join([LEXICON_MESSAGES['final'], LEXICON_MESSAGES['show_data']]))
     data = await state.get_data()
-    await save_user({'name':data['name'],'age':int(data['age']),'gender':data['gender'],'photo':data['photo_id']})
+    await save_user({'name':data['name'],'age':int(data['age']),'gender':data['gender'],'photo':data['photo']})
     await message.answer_photo(
-            photo=data['photo_id'],
+            photo=largest_photo.file_id,
             caption=LEXICON_MESSAGES['data'] % (data['name'], data['age'], LEXICON_KEYBOARD_GENDER[data['gender']]))
     # Устанавливаем дефолтное состояние
     await state.clear()
