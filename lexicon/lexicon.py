@@ -16,10 +16,17 @@ LEXICON_COMMANDS: dict[str, str] = {
     '/help': 'Справка по работе бота'
 }
 
+LEXICON_COMMANDS_ADMIN : dict[str, str] = {
+    '/start': 'Начало работы с ботом',
+    '/all': 'Просмотр всех анкет',
+    '/checked': 'Просмотр необработанных анкет',
+    '/not_checked': 'Просмотр обработанных анкет',
+}
+
 LEXICON_MESSAGES: dict[str,str] = {
     'default': 'Я умею только записывать ваши данные в анкету! Не разговаривайте со мной, а то собьюсь!',
     'admin_start':'Приветствую админа! Показываю статистику.',
-    'data_for_admin':'Имя: %(name)s Возраст: %(age)s Пол: %(gender)s Обработано: %(checked)s',
+    'data_for_admin':'Имя: %(name)s Возраст: %(age)s Пол: %(gender)s Email: %(email)s  Обработано: %(checked)s',
     'checked_icon': '✅',
     'not_checked_icon': '❎',
     'cancel':'Чтобы остановить заполнение анкеты, нажмите /cancel ',
@@ -32,13 +39,15 @@ LEXICON_MESSAGES: dict[str,str] = {
     'fill_gender':'Укажите свой <b>пол</b>:',
     'fill_gender_error':'Вы неправильно указали свой пол, выберите одну из кнопок выше.',
     'fill_gender_result':'Вы выбрали пол: ',
+    'fill_email':'Введите свой email:',
+    'fill_email_error':'Вы неправильно ввели email, попробуйте еще раз.',
     'fill_photo': 'Загрузите своё <b>фото</b>:',
     'fill_photo_error': 'Вы неправильно загрузили своё фото, попробуйте еще раз:',
     'cancel_non_default_state' : 'Вы остановили заполнение анкеты. \n\n Если захотите заполнить её заново, введите команду /fill',
     'cancel_default_state' : 'Вы остановили заполнение анкеты, но вы её сейчас и так не заполняете =( Чтобы начать, введите команду /fill',
     'final' : 'Спасибо! Вы заполнили всю анкету!',
     'show_data':'Вы можете посмотреть свою анкету:',
-    'data' : 'Имя: %s \n\nВозраст: %s \n\nПол: %s \n\n',
+    'data' : 'Имя: %s \n\nВозраст: %s \n\nПол: %s \n\nEmail: %s \n\n',
 
 }
 
@@ -51,5 +60,5 @@ LEXICON_KEYBOARD_ADMIN_DATA: dict[str,str] = {
     'row' : 'Имя: %(name)s Обработано: %(checked)s',
     'checked_icon': '✅',
     'not_checked_icon': '❎',
-    'mark_as_checked': 'Обработано ✅'
+    'mark_as_checked': 'Обработать ✅'
 }

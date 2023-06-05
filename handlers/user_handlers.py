@@ -10,7 +10,7 @@ from aiogram.filters.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
 from aiogram.fsm.storage.memory import MemoryStorage
-from database.database import save_user
+from database.database import save_profile
 from os.path import splitext
 from config_data.config import load_config
 
@@ -23,6 +23,7 @@ class FSMFillForm(StatesGroup):
     fill_name = State()  # Состояние ожидания ввода имени
     fill_age = State()  # Состояние ожидания ввода возраста
     fill_gender = State()  # Состояние ожидания выбора пола
+    fill_email = State() # Состояние ожидания ввода email
     upload_photo = State()  # Состояние ожидания загрузки фото
 
 
@@ -144,15 +145,15 @@ async def process_gender_press(callback: CallbackQuery, state: FSMContext):
     Срабатывает, если КОРРЕКТНО введен пол
     Сохраняет введенное значение
     Выводит запрос на фото
-    Устанавливает состояние upload_photo
+    Устанавливает состояние fill_email
     :type message: Message
     :type state: FSMContext
     """
     await state.update_data(gender=callback.data)
     # редактируем предыдущее сообщение - убираем клавиатуру, выводис сообщение о том, какой пол был выбран
     await callback.message.edit_text(text=LEXICON_MESSAGES['fill_gender_result'] + LEXICON_KEYBOARD_GENDER[callback.data],reply_markup=None)
-    await callback.message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_photo']]))
-    await state.set_state(FSMFillForm.upload_photo)
+    await callback.message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_email']]))
+    await state.set_state(FSMFillForm.fill_email)
 
 
 @router.message(StateFilter(FSMFillForm.fill_gender))
@@ -162,6 +163,33 @@ async def warning_gender_press(message: Message):
     :type message: Message
     """
     await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_gender_error'],LEXICON_MESSAGES['cancel']]))
+
+
+@router.message(StateFilter(FSMFillForm.fill_email),
+            F.text.contains('@'))
+async def process_email_sent(message: Message, state: FSMContext):
+    """
+    Срабатывает, если КОРРЕКТНО введен email
+    Сохраняет введенное значение
+    Выводит запрос на фото
+    Устанавливает состояние upload_photo
+    :type message: Message
+    :type state: FSMContext
+    """
+    await state.update_data(email=message.text)
+    await message.answer(text='\n\n'.join([LEXICON_MESSAGES['fill_thank'],LEXICON_MESSAGES['fill_photo']]),
+                         reply_markup=None)
+    await state.set_state(FSMFillForm.upload_photo)
+
+
+@router.message(StateFilter(FSMFillForm.fill_email))
+async def warning_email_sent(message: Message):
+    """
+    Срабатывает, если НЕКОРРЕКТНО введено email
+    :type message: Message
+    """
+    await message.answer(
+        text='\n\n'.join([LEXICON_MESSAGES['fill_email_error'],LEXICON_MESSAGES['cancel']]))
 
 @router.message(StateFilter(FSMFillForm.upload_photo), F.photo[-1].as_('largest_photo'))
 async def process_photo_sent(message: Message,
@@ -179,7 +207,6 @@ async def process_photo_sent(message: Message,
     """
     # сохраняем фото на диске
     my_config = load_config()
-    print("!!!!!!1",my_config.photo_folder.folder)
     file_info = await state.bot.get_file(message.photo[-1].file_id)
     filename, file_extension = splitext(file_info.file_path)
     saved_filename = message.photo[-1].file_unique_id + file_extension
@@ -190,10 +217,10 @@ async def process_photo_sent(message: Message,
 
     await message.answer(text='\n\n'.join([LEXICON_MESSAGES['final'], LEXICON_MESSAGES['show_data']]))
     data = await state.get_data()
-    await save_user({'name':data['name'],'age':int(data['age']),'gender':data['gender'],'photo':data['photo']})
+    await save_profile({'name':data['name'],'age':int(data['age']),'gender':data['gender'],'email':data['email'],'photo':data['photo']})
     await message.answer_photo(
             photo=largest_photo.file_id,
-            caption=LEXICON_MESSAGES['data'] % (data['name'], data['age'], LEXICON_KEYBOARD_GENDER[data['gender']]))
+            caption=LEXICON_MESSAGES['data'] % (data['name'], data['age'], LEXICON_KEYBOARD_GENDER[data['gender']], data['email']))
     # Устанавливаем дефолтное состояние
     await state.clear()
 
