@@ -2,12 +2,12 @@ import logging
 from copy import deepcopy
 
 from aiogram import Router
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES
 from aiogram.filters import Command, CommandStart, Text, StateFilter, BaseFilter
 from config_data.config import Config, load_config
-from database.database import show_users
-from keyboards.form_kb import create_admin_data_kb
+from database.database import show_users, show_user, update_user_as_checked
+from keyboards.form_kb import create_admin_data_kb, AdminListCallbackFactory,AdminCheckCallbackFactory, create_admin_checked_kb
 
 
 class IsAdmin(BaseFilter):
@@ -42,8 +42,31 @@ async def process_start_command(message: Message) -> None:
         reply_markup=create_admin_data_kb(stat)
     )
 
+@router.callback_query(AdminListCallbackFactory.filter())
+async def process_user_press(callback: CallbackQuery, callback_data:AdminListCallbackFactory):
+    """
+    Срабатывает, если администратором нажата кнопка с заполненной анкетой
+    Выводит анкету с фотографией
+    """
+    full_info = await show_user(callback_data.id)
+    my_config = load_config()
+    photo = FSInputFile(my_config.photo_folder.folder+full_info['photo'])
+    if full_info['checked']:
+        full_info['checked'] = LEXICON_MESSAGES['checked_icon']
+    else:
+        full_info['checked'] = LEXICON_MESSAGES['not_checked_icon']
+    await callback.message.answer_photo(caption=LEXICON_MESSAGES['data_for_admin'] % full_info,
+                                        photo = photo,
+                                        reply_markup=create_admin_checked_kb(full_info))
 
-
+@router.callback_query(AdminCheckCallbackFactory.filter())
+async def process_checked_press(callback: CallbackQuery, callback_data:AdminCheckCallbackFactory):
+    """
+    Срабатывает, если администратором нажата кнопка "ОБРАБОТАНО" на анкете
+    меняет в БД статус анкеты на "обработано"
+    """
+    await update_user_as_checked(callback_data.id)
+    await callback.message.edit_caption(caption='ОБРАБОТАНО', reply_markup=None)
 
 @router.message()
 async def send_default(message: Message):
@@ -52,3 +75,4 @@ async def send_default(message: Message):
     :type message: Message
     """
     await message.answer(f'{LEXICON_MESSAGES["default"]}')
+
