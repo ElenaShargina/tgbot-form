@@ -1,9 +1,13 @@
 import asyncio
+import logging
+from copy import deepcopy
+
 import sqlalchemy as sa
-from sqlalchemy import MetaData, select, Column, Text, create_engine, insert, Integer, ForeignKey
+from sqlalchemy import MetaData, select, Column, Text, create_engine, insert, Integer, ForeignKey, Engine
 from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import DeclarativeBase, Session, Mapped, mapped_column, relationship
-
+from config_data.config import load_config
+import shutil
 
 class Base(DeclarativeBase):
     pass
@@ -19,15 +23,32 @@ class Profile(Base):
     email = Column(sqlite.TEXT)
     checked = Column(sqlite.BOOLEAN, default=False)
 
-# Создаем БД, если нужно
-engine = create_engine('sqlite:///database/db.db', echo=True)
-my_metadata = MetaData()
-# Проверка, существует ли таблица, создаем ее, если надо
-inspector = sa.inspect(engine)
-if not inspector.has_table('profile'):
-    # Если таблицы не существует, создадим её
-    Base.metadata.create_all(engine)
 
+def add_sample_data(engine:Engine, sample_dir: str) -> None:
+    """
+    Добавляет в БД тестовые данные
+    :type engine: Engine
+    :param sample_dir: путь до папки с тестовыми данными
+    :type sample_dir: str
+    """
+    logging.info('ADDING TEST DATA')
+    my_config = load_config()
+    with open(sample_dir+'sample.txt', 'r') as f:
+        profiles = []
+        for line in f.readlines():
+            data = line.split(';')
+            # загружаем фото в общую папку для фото
+            photo_filename = data[0]
+            shutil.copy(sample_dir+photo_filename, my_config.photo_folder.folder+photo_filename)
+            profiles.append(Profile(name=data[1],
+                                  age=data[2],
+                                  gender=data[3],
+                                  photo=data[0],
+                                  email=data[4])
+                            )
+        with Session(engine) as session:
+            session.bulk_save_objects(profiles)
+            session.commit()
 
 async def save_profile(data: dict) -> None:
     """
@@ -36,11 +57,11 @@ async def save_profile(data: dict) -> None:
     :type data: dict
     """
     with Session(engine) as session:
-        new_profile = Profile(name = data['name'],
-                             age = data['age'],
-                             gender = data['gender'],
-                             photo = data['photo'],
-                             email = data['email'])
+        new_profile = Profile(name=data['name'],
+                              age=data['age'],
+                              gender=data['gender'],
+                              photo=data['photo'],
+                              email=data['email'])
         session.add(new_profile)
         session.commit()
 
@@ -57,6 +78,7 @@ async def show_profiles() -> list[dict]:
         for profile in session.scalars(all):
             result.append(profile.__dict__)
     return result
+
 
 async def show_profile(id) -> dict:
     """
@@ -75,7 +97,8 @@ async def show_profile(id) -> dict:
     else:
         return None
 
-async def update_profile_as_checked(id):
+
+async def update_profile_as_checked(id) -> dict:
     """
     Помечает анкету из БД по заданному id как обработанную.
     Возвращает заполненную анкету из БД по заданному id с новым значением checked.
@@ -89,6 +112,21 @@ async def update_profile_as_checked(id):
         one = select(Profile).where(Profile.id == int(id))
         current_profile = session.scalar(one)
         current_profile.checked = True
-        result = current_profile.__dict__
+        result = deepcopy(current_profile.__dict__)
         session.commit()
     return result
+
+
+# Создаем БД, если нужно
+# engine = create_engine('sqlite:///database/db.db', echo=True)
+engine = create_engine('sqlite:///db.db', echo=True)
+
+my_metadata = MetaData()
+# Проверка, существует ли таблица, создаем ее, если надо
+inspector = sa.inspect(engine)
+
+if not inspector.has_table('profile'):
+    # Если таблицы не существует, создадим её
+    Base.metadata.create_all(engine)
+
+add_sample_data(engine,'database/sample/')

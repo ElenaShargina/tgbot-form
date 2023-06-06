@@ -68,7 +68,11 @@ async def process_checked_press(callback: CallbackQuery, callback_data:AdminChec
     меняет в БД статус анкеты на "обработано"
     """
     updated_info = await update_profile_as_checked(callback_data.id)
-    await callback.message.edit_caption(caption=LEXICON_MESSAGES['data_for_admin'], reply_markup=None)
+    if updated_info['checked']:
+        updated_info['checked'] = LEXICON_MESSAGES['checked_icon']
+    else:
+        updated_info['checked'] = LEXICON_MESSAGES['not_checked_icon']
+    await callback.message.edit_caption(caption=LEXICON_MESSAGES['data_for_admin'] % updated_info, reply_markup=None)
 
 @router.message()
 async def send_default(message: Message):

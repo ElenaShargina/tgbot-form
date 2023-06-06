@@ -26,7 +26,7 @@ LEXICON_COMMANDS_ADMIN : dict[str, str] = {
 LEXICON_MESSAGES: dict[str,str] = {
     'default': 'Я умею только записывать ваши данные в анкету! Не разговаривайте со мной, а то собьюсь!',
     'admin_start':'Приветствую админа! Показываю статистику.',
-    'data_for_admin':'Имя: %(name)s Возраст: %(age)s Пол: %(gender)s Email: %(email)s  Обработано: %(checked)s',
+    'data_for_admin':'Имя: %(name)s \n\nВозраст: %(age)s \n\nПол: %(gender)s \n\nEmail: %(email)s  \n\nОбработано: %(checked)s',
     'checked_icon': '✅',
     'not_checked_icon': '❎',
     'cancel':'Чтобы остановить заполнение анкеты, нажмите /cancel ',
