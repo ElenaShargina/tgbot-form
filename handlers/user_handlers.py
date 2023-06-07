@@ -15,7 +15,7 @@ from os.path import splitext
 from config_data.config import load_config
 
 
-# Cоздаем класс, наследуемый от StatesGroup, для группы состояний нашей FSM
+# класс для группы состояний FSM
 class FSMFillForm(StatesGroup):
     """
     Класс для учета состояний этапов заполнения анкеты

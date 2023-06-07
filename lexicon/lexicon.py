@@ -16,19 +16,23 @@ LEXICON_COMMANDS: dict[str, str] = {
     '/help': 'Справка по работе бота'
 }
 
-LEXICON_COMMANDS_ADMIN : dict[str, str] = {
-    '/start': 'Начало работы с ботом',
+LEXICON_ADMIN_MENU: dict[str, str] = {
     '/all': 'Просмотр всех анкет',
-    '/checked': 'Просмотр необработанных анкет',
-    '/not_checked': 'Просмотр обработанных анкет',
+    '/not_checked': 'Просмотр необработанных анкет',
+    '/checked': 'Просмотр обработанных анкет',
 }
 
 LEXICON_MESSAGES: dict[str,str] = {
     'default': 'Я умею только записывать ваши данные в анкету! Не разговаривайте со мной, а то собьюсь!',
-    'admin_start':'Приветствую админа! Показываю статистику.',
-    'data_for_admin':'Имя: %(name)s \n\nВозраст: %(age)s \n\nПол: %(gender)s \n\nEmail: %(email)s  \n\nОбработано: %(checked)s',
+    'admin_default': 'Бот не понимает вашей команды, воспользуйтесь следующими: ',
+    'admin_help': 'Команды бота для админа: ',
+    'admin_start': 'Приветствую админа! Показываю анкеты.',
+    'data_for_admin' : 'Имя: %(name)s \n\nВозраст: %(age)s \n\nПол: %(gender)s \n\nEmail: %(email)s  \n\nОбработано: %(checked)s',
     'checked_icon': '✅',
     'not_checked_icon': '❎',
+    'admin_show_all' : 'Все анкеты:',
+    'admin_show_checked' : 'Все обработанные анкеты:',
+    'admin_show_not_checked' : 'Все необработанные анкеты:',
     'cancel':'Чтобы остановить заполнение анкеты, нажмите /cancel ',
     'fill_start' : 'Начинаем заполнять анкету!',
     'fill_thank' : 'Спасибо!',
@@ -60,5 +64,7 @@ LEXICON_KEYBOARD_ADMIN_DATA: dict[str,str] = {
     'row' : 'Имя: %(name)s Обработано: %(checked)s',
     'checked_icon': '✅',
     'not_checked_icon': '❎',
-    'mark_as_checked': 'Обработать ✅'
+    'mark_as_checked': 'Обработать ✅',
+    'previous_page': '⬅',
+    'next_page':'➡'
 }

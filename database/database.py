@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from copy import deepcopy
+from typing import Literal
 
 import sqlalchemy as sa
 from sqlalchemy import MetaData, select, Column, Text, create_engine, insert, Integer, ForeignKey, Engine
@@ -65,17 +66,25 @@ async def save_profile(data: dict) -> None:
         session.add(new_profile)
         session.commit()
 
-
-async def show_profiles() -> list[dict]:
+async def show_profiles(status: Literal['all','checked','not_checked'] = 'all') -> list[dict]:
     """
     Возвращает список заполненных анкет из БД
+    :param status: 'all' - вывести все анкеты, 'checked' - только обработанные, 'not_checked' - только необработанные
+    :type status: str
+        defaults to 'all'
     :return: список словарей вида [{'name':'Tom', 'age':37, 'gender':'male', 'photo':'smth.jpg', 'email':'mail@nhg.ru'},{},...]
     :rtype: list[dict]
     """
     result = []
     with Session(engine) as session:
-        all = select(Profile)
-        for profile in session.scalars(all):
+        if status == 'all':
+            profiles = select(Profile)
+        elif status == 'checked':
+            profiles = select(Profile).where(Profile.checked == True)
+        else:
+            profiles = select(Profile).where(Profile.checked == False)
+
+        for profile in session.scalars(profiles):
             result.append(profile.__dict__)
     return result
 
@@ -118,8 +127,7 @@ async def update_profile_as_checked(id) -> dict:
 
 
 # Создаем БД, если нужно
-# engine = create_engine('sqlite:///database/db.db', echo=True)
-engine = create_engine('sqlite:///db.db', echo=True)
+engine = create_engine('sqlite:///database/db.db', echo=True)
 
 my_metadata = MetaData()
 # Проверка, существует ли таблица, создаем ее, если надо
@@ -128,5 +136,5 @@ inspector = sa.inspect(engine)
 if not inspector.has_table('profile'):
     # Если таблицы не существует, создадим её
     Base.metadata.create_all(engine)
+    add_sample_data(engine, 'database/sample/')
 
-add_sample_data(engine,'database/sample/')

@@ -3,14 +3,16 @@ from copy import deepcopy
 
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery, FSInputFile
-from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES
+from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES, LEXICON_ADMIN_MENU
 from aiogram.filters import Command, CommandStart, Text, StateFilter, BaseFilter
 from config_data.config import Config, load_config
 from database.database import show_profiles, show_profile, update_profile_as_checked
-from keyboards.form_kb import create_admin_data_kb, AdminListCallbackFactory,AdminCheckCallbackFactory, create_admin_checked_kb
-from keyboards.main_menu import set_main_menu_admin
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import default_state
+from keyboards.form_kb import (AdminListCallbackFactory,AdminCheckCallbackFactory,
+                               create_admin_to_check_kb,
+                               create_admin_checked_profiles_kb, create_admin_all_profiles_kb,
+                               create_admin_not_checked_profiles_kb,
+                               AdminAllPageCallbackFactory, AdminNotCheckedPageCallbackFactory, AdminCheckedPageCallbackFactory)
+
 
 class IsAdmin(BaseFilter):
     """
@@ -31,23 +33,89 @@ router: Router = Router()
 router.message.filter(IsAdmin())
 
 
-@router.message(CommandStart(),StateFilter(default_state))
+@router.message(CommandStart())
 async def process_start_command(message: Message) -> None:
     """
     Срабатывает на команду /start
-    и отправляет ему приветственное сообщение.
+    и отправляет ему приветственное сообщение со списком всех анкет.
+    :type message: Message
+    """
+    admin_menu = '\n\n'.join(f'{i} - {j}' for i,j in LEXICON_ADMIN_MENU.items())
+    await message.answer(
+        text=LEXICON_MESSAGES['admin_start']+'\n\n'+admin_menu,
+    )
+
+@router.message(Command(commands='all'))
+async def process_all_command(message:Message) -> None:
+    """
+    Срабатывает на команду /all
+    Показывает все анкеты, обработанные и нет
     :type message: Message
     """
     all_profiles = await show_profiles()
-    await message.answer(
-        text=LEXICON_MESSAGES['admin_start'],
-        reply_markup=create_admin_data_kb(all_profiles)
-    )
+    await message.answer(text=LEXICON_MESSAGES['admin_show_all'],
+                         reply_markup=create_admin_all_profiles_kb(all_profiles)
+                         )
+
+@router.message(Command(commands='checked'))
+async def process_checked_command(message:Message) -> None:
+    """
+    Срабатывает на команду /checked
+    Показывает все обработанные  анкеты
+    :type message: Message
+    """
+    profiles = await show_profiles(status='checked')
+    await message.answer(text=LEXICON_MESSAGES['admin_show_checked'],
+                         reply_markup=create_admin_checked_profiles_kb(profiles)
+                         )
+
+@router.message(Command(commands='not_checked'))
+async def process_not_checked_command(message:Message) -> None:
+    """
+    Срабатывает на команду /not_checked
+    Показывает все необработанные  анкеты
+    :type message: Message
+    """
+    profiles = await show_profiles(status='not_checked')
+    await message.answer(text=LEXICON_MESSAGES['admin_show_not_checked'],
+                         reply_markup=create_admin_not_checked_profiles_kb(profiles)
+                         )
+
+@router.callback_query(AdminCheckedPageCallbackFactory.filter())
+async def process_checked_page_press(callback: CallbackQuery, callback_data:AdminCheckCallbackFactory):
+    """
+    Срабатывает, если администратором была нажата кнопка со страницей в списке ОБРАБОТАННЫХ анкет
+    """
+    profiles = await show_profiles(status='checked')
+    await callback.message.edit_text(text=LEXICON_MESSAGES['admin_show_checked'],
+                                     reply_markup=create_admin_checked_profiles_kb(profiles,callback_data.id)
+                                     )
+
+@router.callback_query(AdminNotCheckedPageCallbackFactory.filter())
+async def process_unchecked_page_press(callback: CallbackQuery, callback_data:AdminNotCheckedPageCallbackFactory):
+    """
+    Срабатывает, если администратором была нажата кнопка со страницей в списке НЕОБРАБОТАННЫХ анкет
+    """
+    profiles = await show_profiles(status='not_checked')
+    await callback.message.edit_text(text=LEXICON_MESSAGES['admin_show_not_checked'],
+                                     reply_markup=create_admin_not_checked_profiles_kb(profiles, callback_data.id)
+                                     )
+
+@router.callback_query(AdminAllPageCallbackFactory.filter())
+async def process_all_page_press(callback: CallbackQuery, callback_data:AdminAllPageCallbackFactory):
+    """
+    Срабатывает, если администратором была нажата кнопка со страницей в списке ВСЕХ анкет
+    """
+    profiles = await show_profiles(status='all')
+    await callback.message.edit_text(text=LEXICON_MESSAGES['admin_show_all'],
+                                     reply_markup=create_admin_all_profiles_kb(profiles,callback_data.id)
+                                     )
+
 
 @router.callback_query(AdminListCallbackFactory.filter())
 async def process_profile_press(callback: CallbackQuery, callback_data:AdminListCallbackFactory):
     """
-    Срабатывает, если администратором нажата кнопка с заполненной анкетой
+    Срабатывает, если администратором нажата кнопка с анкетой
     Выводит анкету с фотографией
     """
     full_info = await show_profile(callback_data.id)
@@ -59,7 +127,7 @@ async def process_profile_press(callback: CallbackQuery, callback_data:AdminList
         full_info['checked'] = LEXICON_MESSAGES['not_checked_icon']
     await callback.message.answer_photo(caption=LEXICON_MESSAGES['data_for_admin'] % full_info,
                                         photo = photo,
-                                        reply_markup=create_admin_checked_kb(full_info))
+                                        reply_markup=create_admin_to_check_kb(full_info))
 
 @router.callback_query(AdminCheckCallbackFactory.filter())
 async def process_checked_press(callback: CallbackQuery, callback_data:AdminCheckCallbackFactory):
@@ -74,11 +142,21 @@ async def process_checked_press(callback: CallbackQuery, callback_data:AdminChec
         updated_info['checked'] = LEXICON_MESSAGES['not_checked_icon']
     await callback.message.edit_caption(caption=LEXICON_MESSAGES['data_for_admin'] % updated_info, reply_markup=None)
 
+@router.message(Command(commands='help'))
+async def send_help(message: Message):
+    """
+    Срабатывает на команду \help
+    :type message: Message
+    """
+    admin_menu = '\n\n'.join(f'{i} - {j}' for i, j in LEXICON_ADMIN_MENU.items())
+    await message.answer(f'{LEXICON_MESSAGES["admin_help"]}\n\n{admin_menu}')
+
 @router.message()
 async def send_default(message: Message):
     """
     Срабатывает на любые сообщения пользователя, не предусмотренные логикой работы бота
     :type message: Message
     """
-    await message.answer(f'{LEXICON_MESSAGES["default"]}')
+    admin_menu = '\n\n'.join(f'{i} - {j}' for i, j in LEXICON_ADMIN_MENU.items())
+    await message.answer(f'{LEXICON_MESSAGES["admin_default"]}\n\n{admin_menu}')
 
