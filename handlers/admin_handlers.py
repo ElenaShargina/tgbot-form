@@ -3,15 +3,16 @@ from copy import deepcopy
 
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery, FSInputFile
-from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_MESSAGES, LEXICON_ADMIN_MENU
-from aiogram.filters import Command, CommandStart, Text, StateFilter, BaseFilter
-from config_data.config import Config, load_config
+from lexicon.lexicon import LEXICON_MESSAGES, LEXICON_ADMIN_MENU
+from aiogram.filters import Command, CommandStart,  BaseFilter
+from config_data.config import load_config
 from database.database import show_profiles, show_profile, update_profile_as_checked
-from keyboards.form_kb import (AdminListCallbackFactory,AdminCheckCallbackFactory,
-                               create_admin_to_check_kb,
-                               create_admin_checked_profiles_kb, create_admin_all_profiles_kb,
-                               create_admin_not_checked_profiles_kb,
-                               AdminAllPageCallbackFactory, AdminNotCheckedPageCallbackFactory, AdminCheckedPageCallbackFactory)
+from keyboards.admin_kb import (AdminListCF,
+                                AdminCheckProfileCF,
+                                create_admin_to_check_kb,
+                                create_admin_checked_profiles_kb, create_admin_all_profiles_kb,
+                                create_admin_not_checked_profiles_kb,
+                                AdminAllPageCF, AdminNotCheckedPageCF, AdminCheckedPageCF)
 
 
 class IsAdmin(BaseFilter):
@@ -27,7 +28,7 @@ class IsAdmin(BaseFilter):
         return message.from_user.id in self.admin_ids
 
 
-# Этот роутер работает только для админов бота
+# Этот роутер будет работать только для администраторов бота (их id перечислены в .env)
 router: Router = Router()
 
 router.message.filter(IsAdmin())
@@ -81,8 +82,8 @@ async def process_not_checked_command(message:Message) -> None:
                          reply_markup=create_admin_not_checked_profiles_kb(profiles)
                          )
 
-@router.callback_query(AdminCheckedPageCallbackFactory.filter())
-async def process_checked_page_press(callback: CallbackQuery, callback_data:AdminCheckCallbackFactory):
+@router.callback_query(AdminCheckedPageCF.filter())
+async def process_checked_page_press(callback: CallbackQuery, callback_data:AdminCheckProfileCF):
     """
     Срабатывает, если администратором была нажата кнопка со страницей в списке ОБРАБОТАННЫХ анкет
     """
@@ -91,8 +92,8 @@ async def process_checked_page_press(callback: CallbackQuery, callback_data:Admi
                                      reply_markup=create_admin_checked_profiles_kb(profiles,callback_data.id)
                                      )
 
-@router.callback_query(AdminNotCheckedPageCallbackFactory.filter())
-async def process_unchecked_page_press(callback: CallbackQuery, callback_data:AdminNotCheckedPageCallbackFactory):
+@router.callback_query(AdminNotCheckedPageCF.filter())
+async def process_unchecked_page_press(callback: CallbackQuery, callback_data:AdminNotCheckedPageCF):
     """
     Срабатывает, если администратором была нажата кнопка со страницей в списке НЕОБРАБОТАННЫХ анкет
     """
@@ -101,8 +102,8 @@ async def process_unchecked_page_press(callback: CallbackQuery, callback_data:Ad
                                      reply_markup=create_admin_not_checked_profiles_kb(profiles, callback_data.id)
                                      )
 
-@router.callback_query(AdminAllPageCallbackFactory.filter())
-async def process_all_page_press(callback: CallbackQuery, callback_data:AdminAllPageCallbackFactory):
+@router.callback_query(AdminAllPageCF.filter())
+async def process_all_page_press(callback: CallbackQuery, callback_data:AdminAllPageCF):
     """
     Срабатывает, если администратором была нажата кнопка со страницей в списке ВСЕХ анкет
     """
@@ -112,8 +113,8 @@ async def process_all_page_press(callback: CallbackQuery, callback_data:AdminAll
                                      )
 
 
-@router.callback_query(AdminListCallbackFactory.filter())
-async def process_profile_press(callback: CallbackQuery, callback_data:AdminListCallbackFactory):
+@router.callback_query(AdminListCF.filter())
+async def process_profile_press(callback: CallbackQuery, callback_data:AdminListCF):
     """
     Срабатывает, если администратором нажата кнопка с анкетой
     Выводит анкету с фотографией
@@ -129,8 +130,8 @@ async def process_profile_press(callback: CallbackQuery, callback_data:AdminList
                                         photo = photo,
                                         reply_markup=create_admin_to_check_kb(full_info))
 
-@router.callback_query(AdminCheckCallbackFactory.filter())
-async def process_checked_press(callback: CallbackQuery, callback_data:AdminCheckCallbackFactory):
+@router.callback_query(AdminCheckProfileCF.filter())
+async def process_checked_press(callback: CallbackQuery, callback_data:AdminCheckProfileCF):
     """
     Срабатывает, если администратором нажата кнопка "ОБРАБОТАНО" на анкете
     меняет в БД статус анкеты на "обработано"

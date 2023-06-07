@@ -4,16 +4,16 @@ from copy import deepcopy
 from typing import Literal
 
 import sqlalchemy as sa
-from sqlalchemy import MetaData, select, Column, Text, create_engine, insert, Integer, ForeignKey, Engine
+from sqlalchemy import MetaData, select, Column, create_engine, Integer, Engine
 from sqlalchemy.dialects import sqlite
-from sqlalchemy.orm import DeclarativeBase, Session, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Session
 from config_data.config import load_config
 import shutil
 
 class Base(DeclarativeBase):
     pass
 
-
+# класс для сохранения в БД данных по каждой заполненной анкете
 class Profile(Base):
     __tablename__ = 'profile'
     id = Column(Integer(), primary_key=True)
@@ -136,5 +136,6 @@ inspector = sa.inspect(engine)
 if not inspector.has_table('profile'):
     # Если таблицы не существует, создадим её
     Base.metadata.create_all(engine)
+    # Загрузим тестовые данные в свежесозданную БД
     add_sample_data(engine, 'database/sample/')
 

@@ -1,56 +1,44 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from lexicon.lexicon import LEXICON_KEYBOARD_GENDER, LEXICON_KEYBOARD_ADMIN_DATA
+from lexicon.lexicon import LEXICON_KEYBOARD_ADMIN_DATA
 from aiogram.filters.callback_data import CallbackData
-from typing import Literal
 
-
-def create_gender_kb() -> InlineKeyboardMarkup:
-    """
-    Создает клавиатуру для выбора пола
-    :rtype: InlineKeyboardButton
-    """
-    male_button = InlineKeyboardButton(text=LEXICON_KEYBOARD_GENDER['male'],
-                                       callback_data='male')
-    female_button = InlineKeyboardButton(text=LEXICON_KEYBOARD_GENDER['female'],
-                                         callback_data='female')
-    undefined_button = InlineKeyboardButton(text=LEXICON_KEYBOARD_GENDER['undefined_gender'],
-                                            callback_data='undefined_gender')
-    keyboard: list[list[InlineKeyboardButton]] = [[male_button, female_button],
-                                                  [undefined_button]]
-    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
-    return markup
-
-
-class AdminListCallbackFactory(CallbackData, prefix='list'):
+class AdminListCF(CallbackData, prefix='list'):
     id: str
 
-
-class AdminCheckCallbackFactory(CallbackData, prefix='checked'):
+class AdminCheckProfileCF(CallbackData, prefix='checked'):
     id: str
 
-
-class AdminAllPageCallbackFactory(CallbackData, prefix='all_page'):
+class AdminAllPageCF(CallbackData, prefix='all_page'):
     id: int
 
-class AdminCheckedPageCallbackFactory(CallbackData, prefix='checked_page'):
+class AdminCheckedPageCF(CallbackData, prefix='checked_page'):
     id: int
 
-class AdminNotCheckedPageCallbackFactory(CallbackData, prefix='not_checked_page'):
+class AdminNotCheckedPageCF(CallbackData, prefix='not_checked_page'):
     id: int
 
 def create_admin_all_profiles_kb(data, page=0):
-    return create_pages_kb(data, page, callback_factory=AdminAllPageCallbackFactory)
+    """
+    Создает клавиатуру с выводом всех анкет.
+    """
+    return create_pages_kb(data, page, callback_factory=AdminAllPageCF)
 
 def create_admin_checked_profiles_kb(data, page=0):
-    return create_pages_kb(data, page, callback_factory=AdminCheckedPageCallbackFactory)
+    """
+    Создает клавиатуру с выводом всех обработанных анкет.
+    """
+    return create_pages_kb(data, page, callback_factory=AdminCheckedPageCF)
 
 def create_admin_not_checked_profiles_kb(data, page=0):
-    return create_pages_kb(data, page, callback_factory=AdminNotCheckedPageCallbackFactory)
-
-def create_pages_kb(data, page=0, callback_factory = AdminAllPageCallbackFactory) -> InlineKeyboardMarkup:
     """
-    Создает клавиатуру для просмотра администратором заполненных анкет.
+    Создает клавиатуру с выводом всех необработанных анкет.
+    """
+    return create_pages_kb(data, page, callback_factory=AdminNotCheckedPageCF)
+
+def create_pages_kb(data, page=0, callback_factory = AdminAllPageCF) -> InlineKeyboardMarkup:
+    """
+    Создает клавиатуру для просмотра администратором анкет.
     Выводит по 5 анкет + паджинатор для остальных в нижнем ряду
 
     :param data: список выводимых данных
@@ -79,7 +67,7 @@ def create_pages_kb(data, page=0, callback_factory = AdminAllPageCallbackFactory
         else:
             i['checked'] = LEXICON_KEYBOARD_ADMIN_DATA['not_checked_icon']
         kb_builder.row(InlineKeyboardButton(text=LEXICON_KEYBOARD_ADMIN_DATA['row'] % i,
-                                            callback_data=AdminListCallbackFactory(id=i['id']).pack()
+                                            callback_data=AdminListCF(id=i['id']).pack()
                                             )
                        )
 
@@ -108,7 +96,8 @@ def create_pages_kb(data, page=0, callback_factory = AdminAllPageCallbackFactory
 
 def create_admin_to_check_kb(data) -> InlineKeyboardMarkup or None:
     """
-    Создает клавиатуру для отметки администратором просмотренных анкет (только если анкета еще не обработана)
+    Создает клавиатуру для отметки администратором анкет как обработанных
+    (только если анкета еще не обработана)
     :rtype: InlineKeyboardMarkup
     """
     markup = None
@@ -116,7 +105,7 @@ def create_admin_to_check_kb(data) -> InlineKeyboardMarkup or None:
         kb_builder: InlineKeyboardBuilder = InlineKeyboardBuilder()
         kb_builder.row(InlineKeyboardButton(
             text=LEXICON_KEYBOARD_ADMIN_DATA['mark_as_checked'],
-            callback_data=AdminCheckCallbackFactory(id=data['id']).pack()
+            callback_data=AdminCheckProfileCF(id=data['id']).pack()
             )
         )
         markup = kb_builder.as_markup()

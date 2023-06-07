@@ -1,15 +1,14 @@
 import logging
 from copy import deepcopy
 
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, PhotoSize
-from keyboards.form_kb import create_gender_kb
+from keyboards.user_kb import create_gender_kb
 from lexicon.lexicon import LEXICON, LEXICON_MESSAGES, LEXICON_KEYBOARD_GENDER
 from aiogram.filters import Command, CommandStart, Text, StateFilter
 from aiogram.filters.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
-from aiogram.fsm.storage.memory import MemoryStorage
 from database.database import save_profile
 from os.path import splitext
 from config_data.config import load_config
@@ -27,7 +26,7 @@ class FSMFillForm(StatesGroup):
     upload_photo = State()  # Состояние ожидания загрузки фото
 
 
-# Этот роутер работает для всех пользователей кроме админов
+# Роутер будет работать для всех пользователей кроме админов
 router: Router = Router()
 
 
@@ -226,7 +225,7 @@ async def process_photo_sent(message: Message,
 
 
 @router.message(StateFilter(FSMFillForm.upload_photo))
-async def warning_not_photo(message: Message):
+async def warning_photo_sent(message: Message):
     """
     Срабатывает, если НЕКОРРЕКТНО отправлено фото
     :type message: Message
