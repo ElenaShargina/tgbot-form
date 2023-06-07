@@ -104,8 +104,6 @@ pyrsistent==0.18.1
 pytest==7.2.2
 python-dateutil==2.8.2
 python-dotenv==1.0.0
-pywin32==304
-pywinpty==2.0.5
 pyzmq==23.2.0
 qtconsole==5.3.1
 QtPy==2.1.0
