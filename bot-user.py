@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
-from handlers import user_handlers, admin_handlers
+from handlers import user_handlers
 from keyboards.main_menu import set_main_menu
 
 # Инициализация логгера
@@ -23,7 +23,7 @@ async def main():
     logger.info('Starting bot')
 
     # Загрузка конфига в переменную config
-    config: Config = load_config()
+    config: Config = load_config('user.env')
 
     # Инициализация бота и диспетчера
     bot: Bot = Bot(token=config.tg_bot.token,
@@ -33,8 +33,8 @@ async def main():
     # Настройка главного меню бота
     await set_main_menu(bot)
 
-    # Регистрация роутеров для пользователей и администраторов в диспетчере
-    dp.include_router(admin_handlers.router)
+    # Регистрация роутеров для пользователей  диспетчере
+    # dp.include_router(admin_handlers.router)
     dp.include_router(user_handlers.router)
 
     # Пропуск накопившиеся апдейты и запуск polling

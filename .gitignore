@@ -1,2 +1,4 @@
 /.env
 /venv/
+/admin.env
+/user.env
