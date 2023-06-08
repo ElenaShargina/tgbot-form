@@ -28,10 +28,10 @@ class IsAdmin(BaseFilter):
         return message.from_user.id in self.admin_ids
 
 
-# Этот роутер будет работать только для администраторов бота (их id перечислены в .env)
+# Этот роутер будет работать в режиме администратора бота
 router: Router = Router()
 
-router.message.filter(IsAdmin())
+# router.message.filter(IsAdmin())
 
 
 @router.message(CommandStart())
