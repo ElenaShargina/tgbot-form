@@ -18,6 +18,7 @@ from keyboards.admin_kb import (AdminListCF,
 class IsAdmin(BaseFilter):
     """
     Фильтр проверяет, относится ли текущий пользователь к админам, заявленных в конфиге
+    Сейчас, при разделении на два бота, не используется.
     """
     def __init__(self) -> None:
         config = load_config()
@@ -32,7 +33,6 @@ class IsAdmin(BaseFilter):
 router: Router = Router()
 
 # router.message.filter(IsAdmin())
-
 
 @router.message(CommandStart())
 async def process_start_command(message: Message) -> None:

@@ -11,7 +11,7 @@ LEXICON: dict[str, str] = {
                 ' - <b>фото</b> должно быть загруженной картинкой.\n\n'
 }
 
-LEXICON_COMMANDS: dict[str, str] = {
+LEXICON_USER_MENU: dict[str, str] = {
     '/start': 'Начало работы с ботом',
     '/fill': 'Начать заполнять анкету!',
     '/cancel' : 'Отменить заполнение анкеты',
@@ -19,9 +19,11 @@ LEXICON_COMMANDS: dict[str, str] = {
 }
 
 LEXICON_ADMIN_MENU: dict[str, str] = {
+    '/start': 'Начало работы',
     '/all': 'Просмотр всех анкет',
     '/not_checked': 'Просмотр необработанных анкет',
     '/checked': 'Просмотр обработанных анкет',
+    '/help': 'Справка по работе бота'
 }
 
 LEXICON_MESSAGES: dict[str,str] = {
