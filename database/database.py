@@ -10,10 +10,26 @@ from sqlalchemy.orm import DeclarativeBase, Session
 from config_data.config import load_config
 import shutil
 
+
+# Класс для связи с БД, возвращает Engine
+class MyEngine:
+    _instance:int = 0
+    @classmethod
+    def get_instance(cls) -> Engine:
+        """
+        Возвращает объект Engine для работы с БД. Реализует паттерн Singleton, чтобы не плодить новых машин.
+        :rtype: Engine
+        """
+        if cls._instance == 0:
+            cls.object = create_engine('sqlite:///database/db.db', echo=True)
+            cls._instance = 1
+        return cls.object
+
+
 class Base(DeclarativeBase):
     pass
 
-# класс для сохранения в БД данных по каждой заполненной анкете
+# класс для связи с таблицей анкет в БД
 class Profile(Base):
     __tablename__ = 'profile'
     id = Column(Integer(), primary_key=True)
@@ -47,6 +63,7 @@ def add_sample_data(engine:Engine, sample_dir: str) -> None:
                                   photo=data[0],
                                   email=data[4])
                             )
+        engine = MyEngine.get_instance()
         with Session(engine) as session:
             session.bulk_save_objects(profiles)
             session.commit()
@@ -57,6 +74,7 @@ async def save_profile(data: dict) -> None:
     :param data: словарь с полями name, age, gender, photo, email
     :type data: dict
     """
+    engine = MyEngine.get_instance()
     with Session(engine) as session:
         new_profile = Profile(name=data['name'],
                               age=data['age'],
@@ -76,6 +94,7 @@ async def show_profiles(status: Literal['all','checked','not_checked'] = 'all') 
     :rtype: list[dict]
     """
     result = []
+    engine = MyEngine.get_instance()
     with Session(engine) as session:
         if status == 'all':
             profiles = select(Profile)
@@ -98,6 +117,7 @@ async def show_profile(id) -> dict:
     :rtype: list[dict]
     """
     result = None
+    engine = MyEngine.get_instance()
     with Session(engine) as session:
         one = select(Profile).where(Profile.id == int(id))
         result = session.scalar(one)
@@ -117,6 +137,7 @@ async def update_profile_as_checked(id) -> dict:
     :rtype: dict
     """
     result = None
+    engine = MyEngine.get_instance()
     with Session(engine) as session:
         one = select(Profile).where(Profile.id == int(id))
         current_profile = session.scalar(one)
@@ -127,13 +148,13 @@ async def update_profile_as_checked(id) -> dict:
 
 
 # Создаем БД, если нужно
-engine = create_engine('sqlite:///database/db.db', echo=True)
+engine = MyEngine.get_instance()
 
 my_metadata = MetaData()
 # Проверка, существует ли таблица, создаем ее, если надо
 inspector = sa.inspect(engine)
 
-if not inspector.has_table('profile'):
+if not inspector.has_table(Profile.__tablename__):
     # Если таблицы не существует, создадим её
     Base.metadata.create_all(engine)
     # Загрузим тестовые данные в свежесозданную БД
