@@ -2,3 +2,4 @@
 /venv/
 /admin.env
 /user.env
+/database/db.db
