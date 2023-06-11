@@ -5,7 +5,6 @@ from environs import Env
 @dataclass
 class TgBot:
     token: str            # Токен для доступа к телеграм-боту
-    admin_ids: list[int]  # Список id администраторов бота
 
 @dataclass
 class PhotoFolder:
@@ -19,7 +18,7 @@ class Config:
 
 def load_config(path: str | None = None) -> Config:
     """
-    Читает файл .env и возвращает экземпляр класса Config с заполненными полями token и admin_ids
+    Читает файл .env и возвращает экземпляр класса Config с заполненными полями token
     :param path: путь до файла .env
     :type path: str
     :return: экземпляр Config
@@ -27,9 +26,6 @@ def load_config(path: str | None = None) -> Config:
     """
     env = Env()
     env.read_env(path)
-    return Config(tg_bot=TgBot(
-                    token=env('BOT_TOKEN'),
-                    admin_ids=list(map(int, env.list('ADMIN_IDS')))),
+    return Config(tg_bot=TgBot(token=env('BOT_TOKEN')),
                 photo_folder=PhotoFolder(env('PHOTO_FOLDER'))
-
-    )
+                )
