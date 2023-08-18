@@ -25,7 +25,10 @@ async def main():
 
     # Загрузка конфига в переменную config
     config: Config = load_config('admin.env')
+
+    # Инициализация базы данных - если нужно, создание семпловой
     db_init(config)
+
     # Инициализация бота и диспетчера
     bot: Bot = Bot(token=config.tg_bot.token,
                    parse_mode='HTML')

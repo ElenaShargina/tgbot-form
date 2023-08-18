@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from environs import Env
+import os
 
 
 @dataclass
@@ -26,6 +27,7 @@ def load_config(path: str | None = None) -> Config:
     """
     env = Env()
     env.read_env(path)
+    print('BASEAAAAAAAAAA', os.path.join(os.path.dirname(os.path.dirname(__file__)),'database/photos/'))
     return Config(tg_bot=TgBot(env('BOT_TOKEN')),
-                photo_folder=PhotoFolder('database/photos/')
+                photo_folder=PhotoFolder(os.path.join(os.path.dirname(os.path.dirname(__file__)),'database/photos/'))
                 )

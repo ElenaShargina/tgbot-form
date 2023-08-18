@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
 from handlers import user_handlers
 from keyboards.main_menu import set_main_menu_user
+from database.database import db_init
 
 # Инициализация логгера
 logger = logging.getLogger(__name__)
@@ -24,6 +25,9 @@ async def main():
 
     # Загрузка конфига в переменную config
     config: Config = load_config('user.env')
+
+    # Инициализация базы данных - если нужно, создание семпловой
+    db_init(config)
 
     # Инициализация бота и диспетчера
     bot: Bot = Bot(token=config.tg_bot.token,

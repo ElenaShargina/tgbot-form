@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from copy import deepcopy
 from typing import Literal
 
@@ -22,7 +23,7 @@ class MyEngine:
         :rtype: Engine
         """
         if cls._instance == 0:
-            cls.object = create_engine('sqlite:///database/db.db', echo=True)
+            cls.object = create_engine('sqlite:///'+os.path.join(os.path.dirname(os.path.dirname(__file__)),'database/db.db'), echo=True)
             cls._instance = 1
         return cls.object
 
@@ -50,18 +51,16 @@ def add_sample_data(engine:Engine, sample_dir: str, config) -> None:
     :param sample_dir: путь до папки с тестовыми данными
     :type sample_dir: str
     """
+    sample_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)),sample_dir)
     print('ADDING TEST DATA')
     try:
-        g = open(sample_dir+'sample.txt', 'r')
-    except Exception as exc:
-        print('CAN NOT OPEN SAMPLE FILE', exc)
-    with open(sample_dir+'sample.txt', 'r') as f:
+        f = open(os.path.join(sample_dir,'sample.txt'), 'r')
         profiles = []
         for line in f.readlines():
             data = line.split(';')
             # загружаем фото в общую папку для фото
             photo_filename = data[0]
-            shutil.copy(sample_dir+photo_filename, config.photo_folder.folder+photo_filename)
+            shutil.copy(os.path.join(sample_dir,photo_filename), os.path.join(config.photo_folder.folder+photo_filename))
             profiles.append(Profile(name=data[1],
                                   age=data[2],
                                   gender=data[3],
@@ -72,6 +71,8 @@ def add_sample_data(engine:Engine, sample_dir: str, config) -> None:
         with Session(engine) as session:
             session.bulk_save_objects(profiles)
             session.commit()
+    except Exception as exc:
+        print('Can not open file with sample data', exc)
 
 async def save_profile(data: dict) -> None:
     """
