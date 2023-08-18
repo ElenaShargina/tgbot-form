@@ -26,6 +26,6 @@ def load_config(path: str | None = None) -> Config:
     """
     env = Env()
     env.read_env(path)
-    return Config(tg_bot=TgBot(token=env('BOT_TOKEN')),
-                photo_folder=PhotoFolder(env('PHOTO_FOLDER'))
+    return Config(tg_bot=TgBot(env('BOT_TOKEN')),
+                photo_folder=PhotoFolder('database/photos/')
                 )

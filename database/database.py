@@ -9,6 +9,7 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import DeclarativeBase, Session
 from config_data.config import load_config
 import shutil
+from config_data.config import Config
 
 
 # Класс для связи с БД, возвращает Engine
@@ -32,6 +33,7 @@ class Base(DeclarativeBase):
 # класс для связи с таблицей анкет в БД
 class Profile(Base):
     __tablename__ = 'profile'
+    sample_folder = 'database/sample/'
     id = Column(Integer(), primary_key=True)
     name = Column(sqlite.TEXT)
     age = Column(sqlite.INTEGER)
@@ -41,7 +43,7 @@ class Profile(Base):
     checked = Column(sqlite.BOOLEAN, default=False)
 
 
-def add_sample_data(engine:Engine, sample_dir: str) -> None:
+def add_sample_data(engine:Engine, sample_dir: str, config) -> None:
     """
     Добавляет в БД тестовые данные
     :type engine: Engine
@@ -49,14 +51,13 @@ def add_sample_data(engine:Engine, sample_dir: str) -> None:
     :type sample_dir: str
     """
     logging.info('ADDING TEST DATA')
-    my_config = load_config()
     with open(sample_dir+'sample.txt', 'r') as f:
         profiles = []
         for line in f.readlines():
             data = line.split(';')
             # загружаем фото в общую папку для фото
             photo_filename = data[0]
-            shutil.copy(sample_dir+photo_filename, my_config.photo_folder.folder+photo_filename)
+            shutil.copy(sample_dir+photo_filename, config.photo_folder.folder+photo_filename)
             profiles.append(Profile(name=data[1],
                                   age=data[2],
                                   gender=data[3],
@@ -146,17 +147,18 @@ async def update_profile_as_checked(id) -> dict:
         session.commit()
     return result
 
+def db_init(config:Config):
+    # Создаем БД, если нужно
+    engine = MyEngine.get_instance()
 
-# Создаем БД, если нужно
-engine = MyEngine.get_instance()
+    my_metadata = MetaData()
 
-my_metadata = MetaData()
-# Проверка, существует ли таблица, создаем ее, если надо
-inspector = sa.inspect(engine)
+    # Проверка, существует ли таблица, создаем ее, если надо
+    inspector = sa.inspect(engine)
 
-if not inspector.has_table(Profile.__tablename__):
-    # Если таблицы не существует, создадим её
-    Base.metadata.create_all(engine)
-    # Загрузим тестовые данные в свежесозданную БД
-    add_sample_data(engine, 'database/sample/')
+    if not inspector.has_table(Profile.__tablename__):
+        # Если таблицы не существует, создадим её
+        Base.metadata.create_all(engine)
+        # Загрузим тестовые данные в свежесозданную БД
+        add_sample_data(engine, Profile.sample_folder, config)
 
