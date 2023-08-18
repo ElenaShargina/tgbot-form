@@ -53,7 +53,7 @@ def add_sample_data(engine:Engine, sample_dir: str, config) -> None:
     print('ADDING TEST DATA')
     try:
         g = open(sample_dir+'sample.txt', 'r')
-    except Exception exc:
+    except Exception as exc:
         print('CAN NOT OPEN SAMPLE FILE', exc)
     with open(sample_dir+'sample.txt', 'r') as f:
         profiles = []
