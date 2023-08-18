@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from aiogram import Bot, Dispatcher
 from config_data.config import Config, load_config
@@ -24,7 +25,7 @@ async def main():
     logger.info('Starting bot')
 
     # Загрузка конфига в переменную config
-    config: Config = load_config('user.env')
+    config: Config = load_config(os.path.join(os.path.dirname(__file__),'user.env'))
 
     # Инициализация базы данных - если нужно, создание семпловой
     db_init(config)
