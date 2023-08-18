@@ -50,7 +50,11 @@ def add_sample_data(engine:Engine, sample_dir: str, config) -> None:
     :param sample_dir: путь до папки с тестовыми данными
     :type sample_dir: str
     """
-    logging.info('ADDING TEST DATA')
+    print('ADDING TEST DATA')
+    try:
+        g = open(sample_dir+'sample.txt', 'r')
+    except Exception exc:
+        print('CAN NOT OPEN SAMPLE FILE', exc)
     with open(sample_dir+'sample.txt', 'r') as f:
         profiles = []
         for line in f.readlines():
